@@ -1,6 +1,6 @@
 # MedAdapt-LLM
 
-## Project Description
+## Introduction
 
 This project's primary objective is **to explore methods for adapting LLM to the medical domain and assess their effectiveness**. We decide to implement the following methods:
 
@@ -16,7 +16,15 @@ This project's primary objective is **to explore methods for adapting LLM to the
 
 By evaluating these approaches, we aim to determine the most effective strategy for domain-specific LLM adaptation. The insights gained will contribute to understanding how different fine-tuning techniques impact model performance and whether hybrid approaches like RAG can enhance domain relevance without excessive computational overhead.
 
-## Datasets & model
+## Related Work
+
+fine-tuning https://repository.tudelft.nl/record/uuid:bdf94a02-e5d0-4bd0-a6f5-ad9d1bb2ddc8
+LoRA https://hal.science/hal-04983079/
+multi-stage fine-tuning https://www.tdcommons.org/dpubs_series/7085/
+
+## Methodology
+
+### Datasets & model
 
 **Model**: [DeepSeek-R1-Distill-Qwen-1.5B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B) \
 We selected this model because it is a recently released, trending model that leverages modern NLP insights, demonstrates strong benchmark performance, and offers advanced reasoning capabilities. Additionally, its compact size is ideal for training it on the Kaggle platform, balancing performance and efficiency.
@@ -27,9 +35,9 @@ We selected datasets tailored for medical adaptation:
 
 - [MedRAG/textbooks](https://huggingface.co/datasets/MedRAG/textbooks) – dataset of the chunked snippets from the Textbooks corpus used in MedRAG. It's perfect for building our own medical RAG. Moreover, we will use it to serve as a corpus for continual pretraining.
 
-## Implementation details
+### Implementation details
 
-### RAG
+#### RAG
 
 RAG is implementation is in the [rag folder](https://github.com/MilyaushaShamsutdinova/MedAdapt-LLM/tree/main/src/rag).
 
@@ -39,7 +47,7 @@ RAG is implementation is in the [rag folder](https://github.com/MilyaushaShamsut
 
 - `rag.py` - a class that implements basic RAG logic.
 
-### SFT
+#### SFT
 
 The SFT training notebook is available [here](https://github.com/MilyaushaShamsutdinova/MedAdapt-LLM/blob/main/notebooks/sft_training.ipynb).
 
@@ -75,15 +83,14 @@ Training loss graphs:
 
 Training took around 11 hours on Kaggle with GPU P100. The fine-tuned model is available on HF Hub: [MilyaShams/DeepSeek-R1-Distill-Qwen-1.5B-Medical](https://huggingface.co/MilyaShams/DeepSeek-R1-Distill-Qwen-1.5B-Medical).
 
-### Multi-Step Fine-Tuning
+#### Multi-Step Fine-Tuning
 
 Work in progress...
 
-## Evaluation
+## GitHub link
+[MedAdapt-LLM](https://github.com/MilyaushaShamsutdinova/MedAdapt-LLM)
 
-Performance will be assessed using benchmarks from the [Open Medical-LLM leaderboard](https://huggingface.co/spaces/openlifescienceai/open_medical_llm_leaderboard) to fairly compare methods.
-
-## How to run
+### How to run
 
 0. Create a virtual environment.
 1. Install dependencies:  
@@ -95,4 +102,14 @@ Performance will be assessed using benchmarks from the [Open Medical-LLM leaderb
    pip install -e .
    ```
 3. Define `HF_TOKEN` in secrets.
+
+## Experiments and Evaluation
+
+Performance will be assessed using benchmarks from the [Open Medical-LLM leaderboard](https://huggingface.co/spaces/openlifescienceai/open_medical_llm_leaderboard) to fairly compare methods.
+
+## Analysis and Observations
+
+## Conclusion
+
+## References
 

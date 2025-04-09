@@ -18,9 +18,7 @@ By evaluating these approaches, we aim to determine the most effective strategy 
 
 ## Related Work
 
-fine-tuning https://repository.tudelft.nl/record/uuid:bdf94a02-e5d0-4bd0-a6f5-ad9d1bb2ddc8
-LoRA https://hal.science/hal-04983079/
-multi-stage fine-tuning https://www.tdcommons.org/dpubs_series/7085/
+
 
 ## Methodology
 
@@ -85,7 +83,18 @@ Training took around 11 hours on Kaggle with GPU P100. The fine-tuned model is a
 
 #### Multi-Step Fine-Tuning
 
-Work in progress...
+Multi-step fine-tuning consists of two phases:
+
+1. Continual Pretraining on medical textbooks to inject domain knowledge. 
+2. Supervised Fine-Tuning (SFT) for task alignment.
+
+We first continued pretraining the base model on the entire MedRAG/textbooks corpus (~127k snippets), using Masked Language Modeling (MLM). This step helps the model better understand domain-specific vocabulary and context before instruction tuning.
+
+After continual pretraining, we fine-tuned the model on the same 20,000 QA pairs from the medical-o1-reasoning-SFT dataset using the same QLoRA configuration as in the SFT-only approach.
+
+This two-step pipeline helps improve both factual grounding and instruction-following performance in the medical domain.
+
+Training and evaluation loss showed slightly improved convergence compared to direct SFT.
 
 ## GitHub link
 [MedAdapt-LLM](https://github.com/MilyaushaShamsutdinova/MedAdapt-LLM)
@@ -107,9 +116,63 @@ Work in progress...
 
 Performance will be assessed using benchmarks from the [Open Medical-LLM leaderboard](https://huggingface.co/spaces/openlifescienceai/open_medical_llm_leaderboard) to fairly compare methods.
 
+## Experiments and Evaluation
+
+### 1. Continual Pretraining
+
+We performed continual pretraining on the [DeepSeek-R1-Distill-Qwen-1.5B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B) model using medical documents from the [MedRAG/textbooks](https://huggingface.co/datasets/MedRAG/textbooks) dataset to enhance the model's domain-specific knowledge prior to supervised fine-tuning.
+
+#### Setup
+
+- **Dataset**: `MedRAG/textbooks` (127,847 medical text snippets)
+- **Model**: 4-bit quantized `DeepSeek-R1-Distill-Qwen-1.5B`
+- **Pretraining technique**: Causal Language Modeling (CLM)
+- **Training environment**: Kaggle GPU (P100)
+- **Framework**: Hugging Face Transformers + PEFT + BitsAndBytes
+
+#### Hyperparameters
+
+| Parameter             | Value              |
+|-----------------------|--------------------|
+| Number of epochs      | 1                  |
+| Learning rate         | 5e-5               |
+| Batch size            | 1                  |
+| Gradient accumulation | 4                  |
+| Warmup steps          | 300                |
+| Max steps             | 5000               |
+| FP16                  | True               |
+| LoRA config           | r=16, α=32, dropout=0.05 |
+
+#### Results
+
+- Training time: ~6 hours
+- Final training loss: **1.36**
+- Final evaluation loss: **1.41**
+
+<p align="center">
+  <img src="https://github.com/MilyaushaShamsutdinova/MedAdapt-LLM/blob/main/assets/pretrain_train_loss.png?raw=true" width="45%" />
+  <img src="https://github.com/MilyaushaShamsutdinova/MedAdapt-LLM/blob/main/assets/pretrain_eval_loss.png?raw=true" width="45%" />
+</p>
+
+Continual pretraining helped the model better internalize domain-specific language patterns and terminology prior to instruction tuning, which we expect to yield stronger downstream performance in SFT and RAG scenarios.
+
+### 2. SFT
+
+
+
 ## Analysis and Observations
 
 ## Conclusion
 
 ## References
+
+[1] Guo, D., Yang, D., Zhang, H., *et al.* (2024). [**DeepSeek-R1-Distill: Democratizing Open-Source Models for Efficient Reasoning**](https://arxiv.org/pdf/2501.12948).
+We fine-tuned this model for both supervised and continual medical domain adaptation.
+
+[2] Xiong, G., Jin, Q., Lu, Z., Zhang, A., *et al.* (2024). [**MedRAG: A Benchmark for Evaluating Domain-Specific Retrieval-Augmented Generation in the Medical Domain**](https://arxiv.org/pdf/2402.13178).
+We used datasets from this benchmark for both RAG document retrieval and continual pretraining.
+
+[3] Chen, J., Cai, Z., Ji, K., Wang, X., *et al.* (2024). [**Medical Reasoning Instruction Tuning**](https://arxiv.org/pdf/2412.18925).
+We used the FreedomIntelligence/medical-o1-reasoning-SFT dataset introduced in this paper for supervised fine-tuning (SFT).
+
 

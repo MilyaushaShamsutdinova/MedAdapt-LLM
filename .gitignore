@@ -171,4 +171,11 @@ cython_debug/
 .pypirc
 
 med_textbooks
+medical_rag
+data
+notebooks/wandb
+notebooks/unsloth_compiled_cache
+notebooks/trainer_output_cont_pretraining
+notebooks/DeepSeek-R1-Distill-Qwen-1.5B-medical-msft-merged-f32
+notebooks/DeepSeek-R1-Distill-Qwen-1.5B-medical-sft-merged
 

@@ -8,9 +8,12 @@ peft==0.14.0
 torch==2.6.0+cu124
 tqdm==4.67.1
 transformers==4.49.0
-trl==0.15.2
+unsloth
 umap==0.1.1
+vllm==0.8.3
 wandb==0.19.8
 chromadb
 numpy
+pandas
 setuptools
+python-dotenv

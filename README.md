@@ -110,7 +110,8 @@ Training and evaluation loss showed slightly improved convergence compared to di
    ```
    pip install -e .
    ```
-3. Define `HF_TOKEN` in secrets.
+3. Define `HF_TOKEN` in environment variables.
+
 
 ## Experiments and Evaluation
 

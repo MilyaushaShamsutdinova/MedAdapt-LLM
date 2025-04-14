@@ -1,5 +1,6 @@
 from src.rag.db import DB
 from src.rag.llm import LLMInference
+from typing import List
 
 
 class RAG:
@@ -10,7 +11,7 @@ class RAG:
     """
 
     def __init__(self,
-                 collection_name: str = "med_textbooks", 
+                 collection_name: str = "medical_rag",
                  embedding_model_name: str = "multi-qa-MiniLM-L6-cos-v1",
                  llm_name: str="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B") -> None:
         """
@@ -22,21 +23,46 @@ class RAG:
                      embedding_model_name=embedding_model_name)
         self.llm = LLMInference(model_name=llm_name)
 
-    def get_response(self, query: str, top_k: int = 3) -> str:
+    def get_response(self, queries: List[str], top_k: int = 3) -> List[str]:
         """
-        Retrieve relevant documents from the DB, combine them with the query into a single prompt,
-        and generate a response using the LLM.
+        Retrieve relevant documents, construct prompts, and generate responses for a batch of queries.
 
-        :param query: The user's query.
-        :param top_k: Number of top relevant documents to retrieve from the database.
-        :return: The generated response text.
+        :param queries: A list of user queries.
+        :param top_k: Number of top relevant documents to retrieve for each query.
+        :return: A list of generated response texts corresponding to each input query.
         """
-        retrieved_docs = self.db.query(query, top_k=top_k)
-        context = "\n\n".join(retrieved_docs)
-        
-        prompt = f"""User query: {query}\nRetrieved documents: {context}\nAnalyze these documents using your internal knowledge, filtering out irrelevant information to generate the response.\nResponse:\n<think>"""
-        response = self.llm.generate_response(prompt)
-        return response
+        if not queries:
+            return []
+
+        print(f"Processing batch of {len(queries)} queries...")
+        batch_retrieved_docs = self.db.query(queries, top_k=top_k)
+
+        final_prompts = []
+        for i, query in enumerate(queries):
+            retrieved_docs = batch_retrieved_docs[i]
+            if retrieved_docs:
+                context = "\n\n".join(retrieved_docs)
+                prompt = f"""Based on the following retrieved documents, answer the user's query. Filter out irrelevant information and synthesize the answer.
+
+Retrieved documents:
+---
+{context}
+---
+
+User query: {query}
+
+Answer:"""
+            else:
+                print(f"Warning: No documents retrieved for query: {query[:50]}...")
+                prompt = f"""Answer the following user query based on your internal knowledge.
+
+User query: {query}
+
+Answer:"""
+            final_prompts.append(prompt)
+            
+        responses = self.llm.generate(final_prompts)
+        return responses
     
 
 # # usage
@@ -44,7 +70,6 @@ class RAG:
 #     user_query = """What type of cement bonds to tooth structure, provides an anticariogenic effect, has a degree of translucency, and is non-irritating to the pulp?"""
     
 #     rag = RAG()
-#     response = rag.get_response(query=user_query, top_k=2)
+#     response = rag.get_response(queries=[user_query], top_k=2)
 #     print("------------------")
 #     print(response)
-

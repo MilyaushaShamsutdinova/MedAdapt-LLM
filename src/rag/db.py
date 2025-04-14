@@ -8,7 +8,7 @@ import time
 
 class DB:
     def __init__(self,
-                 collection_name: str = "med_textbooks",
+                 collection_name: str = "medical_rag",
                  embedding_model_name: str = "multi-qa-MiniLM-L6-cos-v1") -> None:
         """
         Initialize the DB instance.
@@ -30,29 +30,33 @@ class DB:
         )
 
         if os.path.exists(self.db_path):
-            # print("DB exists, loading it...")
+            print("DB exists, loading it...")
             self.db = Chroma(
                 collection_name=collection_name,
                 embedding_function=self.embedder,
                 persist_directory=self.db_path,
             )
-            # print("DB loaded.")
+            print("DB loaded.")
         else:
-            # print("DB does not exist, creating it...")
+            print("DB does not exist, creating it...")
             os.makedirs(self.db_path, exist_ok=True)
-            # start_time = time.time()
+            start_time = time.time()
             self._populate_db()
-            # end_time = time.time()
-            # print("DB populated.")
-            # print(f"Time taken to populate DB: {end_time - start_time} sec")
+            end_time = time.time()
+            print("DB populated.")
+            print(f"Time taken to populate DB: {end_time - start_time} sec")
 
     def _populate_db(self) -> None:
         """
         Populate the database from the dataset.
-        Loads the 'MedRAG/textbooks' dataset and creates a new Chroma database from the 'contents' field.
+        Loads the 'MedRAG/textbooks' and 'MedRAG/statpearls' dataset and creates a new Chroma database from the 'contents' field.
         """
-        ds = load_dataset("MedRAG/textbooks")
-        contents = ds["train"]["contents"]
+        ds_textbooks = load_dataset("MedRAG/textbooks")
+        ds_statpearls = load_dataset("MilyaShams/MedRAG_statpearls")
+
+        contents = ds_textbooks["train"]["contents"]
+        contents.extend(ds_statpearls["train"]["contents"])
+
         self.db = Chroma.from_texts(
             texts=contents,
             embedding=self.embedder,
@@ -60,17 +64,30 @@ class DB:
             collection_name=self.collection_name,
         )
 
-    def query(self, query: str, top_k: int = 3) -> List[Any]:
+    def query(self, queries: List[str], top_k: int = 3) -> List[List[str]]:
         """
-        Query the database for the top-k most relevant chunks based on the input query.
+        Query the database for the top-k most relevant chunks for a batch of queries.
 
-        :param query: The user's search query.
-        :param top_k: The number of top relevant results to retrieve.
-        :return: A list of search results.
+        :param queries: A list of user search queries.
+        :param top_k: The number of top relevant results to retrieve for each query.
+        :return: A list where each element is a list of retrieved document contents for the corresponding query.
         """
-        results = self.db.similarity_search(query, k=top_k)
-        retrieved_docs = [doc.page_content for doc in results]
-        return retrieved_docs
+        if not self.db:
+            raise ValueError("Database is not initialized.")
+
+        batch_results = []
+        print(f"Querying DB for {len(queries)} queries...")
+
+        for query in queries:
+            try:
+                results = self.db.similarity_search(query, k=top_k)
+                retrieved_docs = [doc.page_content for doc in results]
+                batch_results.append(retrieved_docs)
+            except Exception as e:
+                print(f"Error during similarity search for query '{query[:50]}...': {e}")
+                batch_results.append([])
+
+        return batch_results
 
     def close(self) -> None:
         """
@@ -80,12 +97,12 @@ class DB:
             self.db.close()
         
 
-# # usage
+# usage
 # if __name__ == "__main__":
 #     user_query = """What type of cement bonds to tooth structure, provides an anticariogenic effect, 
 #                 has a degree of translucency, and is non-irritating to the pulp?"""
     
 #     db = DB()
-#     relevant_docs = db.query(query=user_query, top_k=2)
+#     relevant_docs = db.query(queries=[user_query], top_k=2)
 #     print("------------------")
 #     print(relevant_docs)
